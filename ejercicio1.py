@@ -1,47 +1,39 @@
-#Extraccion de datos de la url: https://es.wikipedia.org/wiki/Am%C3%A9rica
 import requests
 from bs4 import BeautifulSoup
-import csv
-import codecs
 
-url = 'https://es.wikipedia.org/wiki/Am%C3%A9rica'
+# URL de la página de noticias
+url = 'https://www.losandes.com.pe/'
 
-#Realizae una solicitud get a la url
-responce = requests.get(url)
+# Realiza una solicitud GET a la URL
+response = requests.get(url)
 
-#Verificar si la solicitud fue exitosa (Codigo de estado 200)
-if responce.status_code == 200:
-    #Parsear el contenido HTML con BeautifulSoup
-    soup = BeautifulSoup(responce.content, 'html.parser')
+# Verifica si la solicitud fue exitosa (código de estado 200)
+if response.status_code == 200:
+    # Parsea el contenido HTML con BeautifulSoup
+    soup = BeautifulSoup(response.content, 'html.parser')
 
-    #Encontrar la tabla de paises y poblacion 
-    table = soup.find('table', {'class': 'wikitable'})
+    # Encuentra el div contenedor que contiene todas las noticias
+    div_contenedor = soup.find('div', class_='jeg_wrapper wpb_wrapper')
 
-    #Crear archivo csv llamado "paises.csv" en modo escritura
-    #with open('paises.csv', 'w', newline='', encoding='utf-8') as csvfile:
-    with codecs.open('paises2.csv', 'w', 'utf-8-sig') as csvfile:   
-        archivo = csv.writer(csvfile)
+    # Encuentra los elementos <div> con la clase 'jeg_heroblock_wrapper' dentro del div grande
+    divs_noticias = div_contenedor.find_all('div', class_='jeg_posts_wrap')
 
-        #Escribir encabezados
-        archivo.writerow(['Pais', 'Poblacion','Independencia', 'Capital'])
+    # Itera sobre los elementos <div> individuales que contienen las noticias
+    for div_noticia in divs_noticias:
+        # Encuentra los títulos <h2> dentro del <div> de la noticia
+        titulos = div_noticia.find_all('h2')
 
-        #Iterar sobre las filas de la tabla 
-        for row in table.find_all('tr')[1:]:
-            columns = row.find_all('td')
+        # Encuentra las fechas dentro del <div> de la noticia usando la etiqueta <i> y la clase 'fa fa-clock-o'
+        fechas = div_noticia.find_all('i', class_='fa fa-clock-o')
 
-            pais = columns[2].text.strip()
-            poblacion = columns[5].text.strip()
-            fecha_independencia = columns[3].text.strip()
-            if(len(columns)>7):
-                capital = columns[7].text.strip()
-            else: 
-                capital=0
+        # Itera sobre los títulos y las fechas e imprímelos
+        for titulo, fecha in zip(titulos, fechas):
+            titulo_texto = titulo.text.strip()
+            fecha_texto = fecha.next_sibling.strip()  # Obtener el texto del hermano siguiente del <i>
 
-            print("Pais:" , pais, "Poblacion:", poblacion,"Independencia:", fecha_independencia, "Capital:", capital)
-            archivo.writerow([pais,poblacion,fecha_independencia,capital])
-    
-        print("El archivo fue creado correctamente.")
-
+            print("Título:", titulo_texto)
+            print("Fecha:", fecha_texto)
+            print()
 
 else:
-    print(f"Error al acceder a la pagina. Codigo de estado: {responce.status_code}")
+    print(f"Error al acceder a la página. Código de estado: {response.status_code}")
